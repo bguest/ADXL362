@@ -1,27 +1,8 @@
-/*
- Arduino Library for Analog Devices ADXL362 - Micropower 3-axis accelerometer
- go to http://www.analog.com/ADXL362 for datasheet
- 
- 
- License: CC BY-SA 3.0: Creative Commons Share-alike 3.0. Feel free 
- to use and abuse this code however you'd like. If you find it useful
- please attribute, and SHARE-ALIKE!
- 
- Created June 2012
- by Anne Mahaffey - hosted on http://annem.github.com/ADXL362
-
- Modified May 2013
- by Jonathan Ruiz de Garibay
- 
- */ 
-
 #include <Arduino.h>
 #include <ADXL362.h>
 #include <SPI.h>
 
 //#define ADXL362_DEBUG
-
-int16_t slaveSelectPin = 10;
 
 ADXL362::ADXL362() {
 }
@@ -37,7 +18,7 @@ void ADXL362::begin(int16_t chipSelectPin) {
 	SPI.begin();
 	SPI.setDataMode(SPI_MODE0);	//CPHA = CPOL = 0    MODE = 0
 	delay(1000);
-    
+
 	// soft reset
 	SPIwriteOneRegister(0x1F, 0x52);  // Write to SOFT RESET, "R"
 	delay(10);
@@ -45,28 +26,28 @@ void ADXL362::begin(int16_t chipSelectPin) {
 	Serial.println("Soft Reset\n");
 #endif
  }
- 
+
 //
 //  beginMeasure()
 //  turn on Measurement mode - required after reset
-// 
+//
 void ADXL362::beginMeasure() {
 	byte temp = SPIreadOneRegister(0x2D);	// read Reg 2D before modifying for measure mode
 
 #ifdef ADXL362_DEBUG
-	Serial.print(  "Setting Measeurement Mode - Reg 2D before = "); 
-	Serial.print(temp); 
+	Serial.print(  "Setting Measeurement Mode - Reg 2D before = ");
+	Serial.print(temp);
 #endif
 
 	// turn on measurement mode
 	byte tempwrite = temp | 0x02;			// turn on measurement bit in Reg 2D
 	SPIwriteOneRegister(0x2D, tempwrite); // Write to POWER_CTL_REG, Measurement Mode
-	delay(10);	
-  
+	delay(10);
+
 #ifdef ADXL362_DEBUG
 	temp = SPIreadOneRegister(0x2D);
-	Serial.print(  ", Reg 2D after = "); 
-	Serial.println(temp); 
+	Serial.print(  ", Reg 2D after = ");
+	Serial.println(temp);
 	Serial.println();
 #endif
 }
@@ -80,7 +61,7 @@ void ADXL362::setRange(int sense)
 {
 	byte reg = SPIreadOneRegister(FILTER_CTL);
 	reg &= 0x3F; // mask out the sense bits;
-	reg |= (sense << RANGE); 
+	reg |= (sense << RANGE);
 	SPIwriteOneRegister(FILTER_CTL, reg);
 }
 
@@ -101,12 +82,12 @@ void ADXL362::setODR(int rate)
 //
 int16_t ADXL362::readXData(){
 	int16_t XDATA = SPIreadTwoRegisters(0x0E);
-	
+
 #ifdef ADXL362_DEBUG
 	Serial.print("XDATA = ");
 	Serial.println(XDATA);
 #endif
-	
+
 	return XDATA;
 }
 
@@ -114,10 +95,10 @@ int16_t ADXL362::readYData(){
 	int16_t YDATA = SPIreadTwoRegisters(0x10);
 
 #ifdef ADXL362_DEBUG
-	Serial.print("\tYDATA = "); 
+	Serial.print("\tYDATA = ");
 	Serial.println(YDATA);
 #endif
-	
+
 	return YDATA;
 }
 
@@ -125,7 +106,7 @@ int16_t ADXL362::readZData(){
 	int16_t ZDATA = SPIreadTwoRegisters(0x12);
 
 #ifdef ADXL362_DEBUG
-	Serial.print("\tZDATA = "); 
+	Serial.print("\tZDATA = ");
 	Serial.println(ZDATA);
 #endif
 
@@ -136,7 +117,7 @@ int16_t ADXL362::readTemp(){
 	int16_t TEMP = SPIreadTwoRegisters(0x14);
 
 #ifdef ADXL362_DEBUG
-	Serial.print("\tTEMP = "); 
+	Serial.print("\tTEMP = ");
 	Serial.println(TEMP);
 #endif
 
@@ -158,11 +139,11 @@ void ADXL362::readXYZTData(int16_t &XData, int16_t &YData, int16_t &ZData, int16
 	  Temperature = SPI.transfer(0x00);
 	  Temperature = Temperature + (SPI.transfer(0x00) << 8);
 	  digitalWrite(slaveSelectPin, HIGH);
-  
+
 #ifdef ADXL362_DEBUG
-	Serial.print("XDATA = "); Serial.print(XData); 
-	Serial.print("\tYDATA = "); Serial.print(YData); 
-	Serial.print("\tZDATA = "); Serial.print(ZData); 
+	Serial.print("XDATA = "); Serial.print(XData);
+	Serial.print("\tYDATA = "); Serial.print(YData);
+	Serial.print("\tZDATA = "); Serial.print(ZData);
 	Serial.print("\tTemperature = "); Serial.println(Temperature);
 #endif
 }
@@ -174,13 +155,13 @@ void ADXL362::setupDCActivityInterrupt(int16_t threshold, byte time){
 
 	// turn on activity interrupt
 	byte ACT_INACT_CTL_Reg = SPIreadOneRegister(0x27);  // Read current reg value
-	ACT_INACT_CTL_Reg = ACT_INACT_CTL_Reg | (0x01);     // turn on bit 1, ACT_EN  
-	SPIwriteOneRegister(0x27, ACT_INACT_CTL_Reg);       // Write new reg value 
+	ACT_INACT_CTL_Reg = ACT_INACT_CTL_Reg | (0x01);     // turn on bit 1, ACT_EN
+	SPIwriteOneRegister(0x27, ACT_INACT_CTL_Reg);       // Write new reg value
 	ACT_INACT_CTL_Reg = SPIreadOneRegister(0x27);       // Verify properly written
 
 #ifdef ADXL362_DEBUG
 	Serial.print("DC Activity Threshold set to ");  	Serial.print(SPIreadTwoRegisters(0x20));
-	Serial.print(", Time threshold set to ");  		Serial.print(SPIreadOneRegister(0x22)); 
+	Serial.print(", Time threshold set to ");  		Serial.print(SPIreadOneRegister(0x22));
 	Serial.print(", ACT_INACT_CTL Register is ");  	Serial.println(ACT_INACT_CTL_Reg, HEX);
 #endif
 }
@@ -189,16 +170,16 @@ void ADXL362::setupACActivityInterrupt(int16_t threshold, byte time){
 	//  Setup motion and time thresholds
 	SPIwriteTwoRegisters(0x20, threshold);
 	SPIwriteOneRegister(0x22, time);
-  
+
 	// turn on activity interrupt
 	byte ACT_INACT_CTL_Reg = SPIreadOneRegister(0x27);  // Read current reg value
-	ACT_INACT_CTL_Reg = ACT_INACT_CTL_Reg | (0x03);     // turn on bit 2 and 1, ACT_AC_DCB, ACT_EN  
-	SPIwriteOneRegister(0x27, ACT_INACT_CTL_Reg);       // Write new reg value 
+	ACT_INACT_CTL_Reg = ACT_INACT_CTL_Reg | (0x03);     // turn on bit 2 and 1, ACT_AC_DCB, ACT_EN
+	SPIwriteOneRegister(0x27, ACT_INACT_CTL_Reg);       // Write new reg value
 	ACT_INACT_CTL_Reg = SPIreadOneRegister(0x27);       // Verify properly written
 
 #ifdef ADXL362_DEBUG
 	Serial.print("AC Activity Threshold set to ");  	Serial.print(SPIreadTwoRegisters(0x20));
-	Serial.print(", Time Activity set to ");  		Serial.print(SPIreadOneRegister(0x22));  
+	Serial.print(", Time Activity set to ");  		Serial.print(SPIreadOneRegister(0x22));
 	Serial.print(", ACT_INACT_CTL Register is ");  Serial.println(ACT_INACT_CTL_Reg, HEX);
 #endif
 }
@@ -209,9 +190,9 @@ void ADXL362::setupDCInactivityInterrupt(int16_t threshold, int16_t time){
 	SPIwriteTwoRegisters(0x25, time);
 
 	// turn on inactivity interrupt
-	byte ACT_INACT_CTL_Reg = SPIreadOneRegister(0x27);   // Read current reg value 
-	ACT_INACT_CTL_Reg = ACT_INACT_CTL_Reg | (0x04);      // turn on bit 3, INACT_EN  
-	SPIwriteOneRegister(0x27, ACT_INACT_CTL_Reg);        // Write new reg value 
+	byte ACT_INACT_CTL_Reg = SPIreadOneRegister(0x27);   // Read current reg value
+	ACT_INACT_CTL_Reg = ACT_INACT_CTL_Reg | (0x04);      // turn on bit 3, INACT_EN
+	SPIwriteOneRegister(0x27, ACT_INACT_CTL_Reg);        // Write new reg value
 	ACT_INACT_CTL_Reg = SPIreadOneRegister(0x27);        // Verify properly written
 
 #ifdef ADXL362_DEBUG
@@ -225,16 +206,16 @@ void ADXL362::setupACInactivityInterrupt(int16_t threshold, int16_t time){
 	//  Setup motion and time thresholds
 	SPIwriteTwoRegisters(0x23, threshold);
 	SPIwriteTwoRegisters(0x25, time);
- 
+
 	// turn on inactivity interrupt
 	byte ACT_INACT_CTL_Reg = SPIreadOneRegister(0x27);   // Read current reg value
-	ACT_INACT_CTL_Reg = ACT_INACT_CTL_Reg | (0x0C);      // turn on bit 3 and 4, INACT_AC_DCB, INACT_EN  
-	SPIwriteOneRegister(0x27, ACT_INACT_CTL_Reg);        // Write new reg value 
+	ACT_INACT_CTL_Reg = ACT_INACT_CTL_Reg | (0x0C);      // turn on bit 3 and 4, INACT_AC_DCB, INACT_EN
+	SPIwriteOneRegister(0x27, ACT_INACT_CTL_Reg);        // Write new reg value
 	ACT_INACT_CTL_Reg = SPIreadOneRegister(0x27);        // Verify properly written
 
 #ifdef ADXL362_DEBUG
 	Serial.print("AC Inactivity Threshold set to ");  Serial.print(SPIreadTwoRegisters(0x23));
-	Serial.print(", Time Inactivity set to ");  Serial.print(SPIreadTwoRegisters(0x25)); 
+	Serial.print(", Time Inactivity set to ");  Serial.print(SPIreadTwoRegisters(0x25));
 	Serial.print(", ACT_INACT_CTL Register is ");  Serial.println(ACT_INACT_CTL_Reg, HEX);
 #endif
 }
@@ -271,7 +252,7 @@ void ADXL362::checkAllControlRegs(){
 // read and write one register
 byte ADXL362::SPIreadOneRegister(byte regAddress){
 	byte regValue = 0;
-  
+
 	digitalWrite(slaveSelectPin, LOW);
 	SPI.transfer(0x0B);  // read instruction
 	SPI.transfer(regAddress);
@@ -282,7 +263,7 @@ byte ADXL362::SPIreadOneRegister(byte regAddress){
 }
 
 void ADXL362::SPIwriteOneRegister(byte regAddress, byte regValue){
-  
+
 	digitalWrite(slaveSelectPin, LOW);
 	SPI.transfer(0x0A);  // write instruction
 	SPI.transfer(regAddress);
@@ -292,24 +273,24 @@ void ADXL362::SPIwriteOneRegister(byte regAddress, byte regValue){
 
 int16_t ADXL362::SPIreadTwoRegisters(byte regAddress){
 	int16_t twoRegValue = 0;
-  
+
 	digitalWrite(slaveSelectPin, LOW);
 	SPI.transfer(0x0B);  // read instruction
-	SPI.transfer(regAddress);  
+	SPI.transfer(regAddress);
 	twoRegValue = SPI.transfer(0x00);
 	twoRegValue = twoRegValue + (SPI.transfer(0x00) << 8);
 	digitalWrite(slaveSelectPin, HIGH);
 
 	return twoRegValue;
-}  
+}
 
 void ADXL362::SPIwriteTwoRegisters(byte regAddress, int16_t twoRegValue){
 	byte twoRegValueH = twoRegValue >> 8;
 	byte twoRegValueL = twoRegValue;
-  
+
 	digitalWrite(slaveSelectPin, LOW);
 	SPI.transfer(0x0A);  // write instruction
-	SPI.transfer(regAddress);  
+	SPI.transfer(regAddress);
 	SPI.transfer(twoRegValueL);
 	SPI.transfer(twoRegValueH);
 	digitalWrite(slaveSelectPin, HIGH);
